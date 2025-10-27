@@ -1,0 +1,95 @@
+# Создаем директорию для конфигов сервера
+sudo mkdir -p /etc/openvpn/server
+
+# Копируем файлы в нужные места
+sudo cp /etc/openvpn/easy-rsa/pki/ca.crt /etc/openvpn/server/
+sudo cp /etc/openvpn/easy-rsa/pki/issued/server.crt /etc/openvpn/server/
+sudo cp /etc/openvpn/easy-rsa/pki/private/server.key /etc/openvpn/server/
+sudo cp /etc/openvpn/easy-rsa/pki/dh.pem /etc/openvpn/server/
+sudo cp /etc/openvpn/easy-rsa/ta.key /etc/openvpn/server/
+
+
+port 1194
+proto udp
+dev tun
+
+ca /etc/openvpn/server/ca.crt
+cert /etc/openvpn/server/server.crt
+key /etc/openvpn/server/server.key
+dh /etc/openvpn/server/dh.pem
+
+server 10.8.0.0 255.255.255.0
+ifconfig-pool-persist /var/log/openvpn/ipp.txt
+
+push "redirect-gateway def1 bypass-dhcp"
+push "dhcp-option DNS 8.8.8.8"
+push "dhcp-option DNS 8.8.4.4"
+
+client-to-client
+keepalive 10 120
+tls-auth /etc/openvpn/server/ta.key 0
+
+cipher AES-256-CBC
+auth SHA256
+
+user nobody
+group nobody
+persist-key
+persist-tun
+
+status /var/log/openvpn/openvpn-status.log
+log /var/log/openvpn/openvpn.log
+verb 3
+
+
+client
+dev tun
+proto udp
+remote YOUR_SERVER_IP 1194
+resolv-retry infinite
+nobind
+
+user nobody
+group nobody
+persist-key
+persist-tun
+
+remote-cert-tls server
+tls-auth ta.key 1
+cipher AES-256-CBC
+auth SHA256
+
+verb 3
+
+<ca>
+-----BEGIN CERTIFICATE-----
+# Вставьте содержимое ca.crt
+-----END CERTIFICATE-----
+</ca>
+
+<cert>
+-----BEGIN CERTIFICATE-----
+# Вставьте содержимое client1.crt
+-----END CERTIFICATE-----
+</cert>
+
+<key>
+-----BEGIN PRIVATE KEY-----
+# Вставьте содержимое client1.key
+-----END PRIVATE KEY-----
+</key>
+
+<tls-auth>
+-----BEGIN OpenVPN Static key V1-----
+# Вставьте содержимое ta.key
+-----END OpenVPN Static key V1-----
+</tls-auth>
+
+
+sudo cat /etc/openvpn/easy-rsa/pki/ca.crt
+sudo cat /etc/openvpn/easy-rsa/pki/issued/client1.crt
+sudo cat /etc/openvpn/easy-rsa/pki/private/client1.key
+sudo cat /etc/openvpn/easy-rsa/ta.key
+
+mute 20
+explicit-exit-notify 1
